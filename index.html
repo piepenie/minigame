@@ -1,1 +1,1213 @@
-123
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>리듬 카 팩토리 - 캐주얼 자동차 조립</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700;800&family=Jua&family=Inter:wght@400;600;800&display=swap');
+
+    .toy-font {
+      font-family: 'Fredoka', 'Jua', sans-serif;
+    }
+
+    body {
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* 팝아트 입체감 그림자 */
+    .pop-shadow {
+      box-shadow: 0 10px 0 #1e293b;
+    }
+    .pop-shadow-sm {
+      box-shadow: 0 5px 0 #1e293b;
+    }
+    .pop-shadow-btn {
+      box-shadow: 0 6px 0 #0f172a;
+    }
+    .pop-shadow-btn:active {
+      transform: translateY(4px);
+      box-shadow: 0 2px 0 #0f172a;
+    }
+
+    /* 피버 모드 외곽 테두리 펄스 */
+    @keyframes feverGlow {
+      0%, 100% { border-color: #f59e0b; box-shadow: 0 0 25px rgba(245, 158, 11, 0.5); }
+      50% { border-color: #ec4899; box-shadow: 0 0 35px rgba(236, 72, 153, 0.6); }
+    }
+    .fever-active {
+      animation: feverGlow 1s infinite alternate;
+    }
+  </style>
+</head>
+<body class="bg-amber-50 min-h-screen flex flex-col items-center justify-center p-3 sm:p-5 text-slate-800">
+
+  <!-- 메인 게임 보드 -->
+  <div id="gameFrame" class="w-full max-w-3xl bg-white rounded-3xl p-4 sm:p-7 flex flex-col items-center relative border-4 border-slate-800 pop-shadow transition-all duration-300">
+    
+    <!-- 상단 대시보드 (스코어 & 진행 상황) -->
+    <div class="w-full flex items-center justify-between mb-3 border-b-4 border-slate-100 pb-3">
+      <!-- 차량 정보 뱃지 -->
+      <div class="flex items-center gap-3">
+        <div id="modelBadgeIcon" class="w-12 h-12 rounded-2xl bg-amber-400 border-2 border-slate-800 flex items-center justify-center text-2xl text-slate-900 shadow-sm">
+          <i class="fa-solid fa-car-side"></i>
+        </div>
+        <div>
+          <span id="modelTierText" class="px-2 py-0.5 rounded-full text-xs font-black bg-rose-100 text-rose-600 border border-rose-300">STAGE 1</span>
+          <h1 id="modelNameText" class="toy-font text-lg sm:text-2xl font-black text-slate-800 leading-tight">옐로우 팝 세단</h1>
+        </div>
+      </div>
+
+      <!-- 스코어 / 결함도 / 콤보 / 피버 상태 -->
+      <div class="flex items-center gap-3 sm:gap-5">
+        <!-- 불량/결함 상태 인디케이터 -->
+        <div class="text-right">
+          <p class="text-xs text-rose-500 font-extrabold tracking-wider">DEFECTS</p>
+          <div id="defectBadge" class="toy-font text-sm sm:text-base font-black text-slate-400 bg-slate-100 px-2.5 py-0.5 rounded-xl border border-slate-300">
+            정상 (0)
+          </div>
+        </div>
+        <div class="text-right">
+          <p class="text-xs text-slate-400 font-bold tracking-wider">SCORE</p>
+          <p id="scoreDisplay" class="toy-font text-xl sm:text-2xl font-black text-amber-500">0</p>
+        </div>
+        <div class="text-right">
+          <p class="text-xs text-slate-400 font-bold tracking-wider">COMBO</p>
+          <p id="comboDisplay" class="toy-font text-xl sm:text-2xl font-black text-emerald-500">0</p>
+        </div>
+        <!-- 사운드 토글 버튼 -->
+        <button id="soundToggleBtn" class="w-10 h-10 rounded-2xl bg-slate-100 hover:bg-slate-200 border-2 border-slate-800 flex items-center justify-center text-slate-700 transition pop-shadow-btn">
+          <i id="soundIcon" class="fa-solid fa-volume-high"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- 5단계 공정 게이지 (시각적 부품 진행도) -->
+    <div class="w-full mb-3 bg-slate-100 p-2.5 rounded-2xl border-2 border-slate-800 flex flex-col gap-1.5">
+      <div class="flex items-center justify-between px-1 text-xs font-extrabold text-slate-600">
+        <span class="flex items-center gap-1">
+          <i class="fa-solid fa-wrench text-amber-500"></i>
+          현재 공정: <span id="currentPartNameText" class="text-indigo-600">1. 튼튼한 하부 프레임</span>
+        </span>
+        <span id="progressStepText" class="toy-font text-sm text-slate-700 font-black">0 / 5</span>
+      </div>
+      <!-- 단계별 인디케이터 블록 5칸 -->
+      <div class="grid grid-cols-5 gap-2 w-full h-4">
+        <div id="step-0" class="rounded-lg border-2 border-slate-800 bg-slate-200 transition-all duration-300"></div>
+        <div id="step-1" class="rounded-lg border-2 border-slate-800 bg-slate-200 transition-all duration-300"></div>
+        <div id="step-2" class="rounded-lg border-2 border-slate-800 bg-slate-200 transition-all duration-300"></div>
+        <div id="step-3" class="rounded-lg border-2 border-slate-800 bg-slate-200 transition-all duration-300"></div>
+        <div id="step-4" class="rounded-lg border-2 border-slate-800 bg-slate-200 transition-all duration-300"></div>
+      </div>
+    </div>
+
+    <!-- 캔버스 (시각적 자동차 조립 작업실 & 드라이브 쇼타임) -->
+    <div class="relative w-full aspect-[20/9] min-h-[220px] max-h-[340px] bg-sky-200 rounded-3xl overflow-hidden border-4 border-slate-800 pop-shadow-sm flex items-center justify-center" id="canvasContainer">
+      <canvas id="factoryCanvas" class="w-full h-full block cursor-pointer"></canvas>
+
+      <!-- 판정 팝업 연출 레이어 -->
+      <div id="judgementWrapper" class="absolute pointer-events-none flex flex-col items-center justify-center transition-all duration-150 opacity-0 transform scale-50">
+        <span id="judgementText" class="toy-font text-3xl sm:text-5xl font-black drop-shadow-[0_4px_0_rgba(0,0,0,0.4)]">PERFECT!</span>
+        <span id="bonusScoreText" class="toy-font text-sm sm:text-lg font-bold text-white bg-slate-900/80 px-3 py-0.5 rounded-full mt-1 border border-white">2단계 초고속 패스! ⚡</span>
+      </div>
+
+      <!-- 완성 및 출고 축하 오버레이 (바 일시 정지 상태에서 표시) -->
+      <div id="shipmentOverlay" class="absolute inset-0 bg-slate-900/85 backdrop-blur-[3px] flex flex-col items-center justify-center text-white p-4 transition-all duration-300 opacity-0 pointer-events-none">
+        <div id="shipmentIconBadge" class="w-16 h-16 rounded-full bg-amber-400 text-slate-900 flex items-center justify-center text-3xl font-black mb-2 animate-bounce border-4 border-white">
+          <i class="fa-solid fa-flag-checkered"></i>
+        </div>
+        <div id="qcRankBadge" class="px-3 py-1 rounded-full text-xs font-black toy-font mb-1 tracking-wider">QC 검수 등급: S급</div>
+        <h2 id="shipmentTitle" class="toy-font text-2xl sm:text-4xl font-black text-amber-300 tracking-wide mb-1">차량 완성 & 출고 완료!</h2>
+        <p id="shipmentDesc" class="text-xs sm:text-sm text-slate-200 mb-2 font-semibold text-center">멋진 옐로우 팝 세단이 생산 라인을 통과했습니다!</p>
+        <p id="shipmentBonusDesc" class="text-xs text-amber-300 font-bold mb-4"></p>
+        <button id="nextCarBtn" class="py-3 px-8 bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-white toy-font text-base sm:text-lg font-black rounded-2xl border-4 border-slate-900 pop-shadow-btn transition-transform flex items-center gap-2">
+          다음 모델 조립하기 <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- ★ 리듬 타이밍 컨트롤러 영역 ★ -->
+    <div class="w-full mt-4 flex flex-col gap-2">
+      <!-- 상태 알림 뱃지 -->
+      <div class="flex items-center justify-between text-xs font-bold text-slate-500 px-1">
+        <span class="flex items-center gap-1.5">
+          <span id="statusIndicatorDot" class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+          <span id="statusIndicatorText" class="text-slate-700 font-extrabold">바늘이 중앙에 올 때 스페이스바 또는 조립 버튼 클릭!</span>
+        </span>
+        <span id="defectWarning" class="font-bold text-rose-500 hidden animate-bounce">
+          ⚠️ 미스 누적 시 고장차 출고 주의!
+        </span>
+        <span id="advantageBadge" class="hidden font-extrabold text-amber-500 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-300 animate-pulse">
+          ⚡ 대성공 시 +2단계 직행 & 결함 1회 수리!
+        </span>
+      </div>
+
+      <!-- 리듬 타이밍 바 컨테이너 -->
+      <div id="meterContainer" class="relative w-full h-14 sm:h-16 bg-slate-800 rounded-2xl border-4 border-slate-800 overflow-hidden shadow-inner flex items-center">
+        <!-- 빗나감(MISS) 배경 -->
+        <div class="absolute inset-0 bg-rose-900/60 flex items-center justify-between px-3 text-[10px] sm:text-xs font-black text-rose-300 tracking-widest opacity-80 pointer-events-none">
+          <span>MISS</span>
+          <span>MISS</span>
+        </div>
+
+        <!-- 성공(GOOD) 판정 구역 -->
+        <div id="zoneGood" class="absolute inset-y-0 bg-emerald-400/80 border-x-4 border-emerald-300 flex items-center justify-center transition-all duration-200">
+          <span class="text-[10px] sm:text-xs font-black text-emerald-950 uppercase tracking-wider opacity-90 hidden sm:inline">GOOD</span>
+        </div>
+
+        <!-- 대성공(PERFECT) 판정 구역 -->
+        <div id="zonePerfect" class="absolute inset-y-0 bg-amber-400 border-x-4 border-white flex items-center justify-center shadow-lg transition-all duration-200">
+          <span class="toy-font text-xs sm:text-sm font-black text-amber-950 tracking-tighter">PERFECT!</span>
+        </div>
+
+        <!-- 왕복 바늘 (Cursor Needle) -->
+        <div id="meterCursor" class="absolute top-0 bottom-0 w-4 bg-white rounded-md border-2 border-slate-900 shadow-[0_0_12px_rgba(255,255,255,0.9)] z-20 -ml-2 pointer-events-none flex items-center justify-center">
+          <div class="w-1 h-8 bg-rose-500 rounded-full"></div>
+        </div>
+
+        <!-- 출고 중 일시정지 마스크 -->
+        <div id="meterPauseMask" class="absolute inset-0 bg-slate-900/90 backdrop-blur-sm z-30 hidden items-center justify-center gap-2 text-amber-400 toy-font text-sm sm:text-base font-black">
+          <i class="fa-solid fa-pause"></i> 출고 진행 중 (타이밍 바 일시정지)
+        </div>
+      </div>
+
+      <!-- 터치 및 조작 큰 버튼 -->
+      <div class="w-full flex gap-3 mt-1">
+        <button id="hitActionBtn" class="w-full py-4 bg-amber-400 hover:bg-amber-300 active:bg-amber-500 rounded-2xl border-4 border-slate-800 pop-shadow-btn text-slate-900 toy-font text-lg sm:text-xl font-black flex items-center justify-center gap-3 transition">
+          <i class="fa-solid fa-hammer text-xl"></i>
+          부품 조립 타격! [SPACE]
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 하단 팁 가이드 -->
+  <footer class="mt-4 text-center text-xs text-slate-500 font-semibold flex items-center gap-2">
+    <i class="fa-solid fa-circle-info text-amber-500"></i>
+    <span><b>PERFECT(대성공)</b>를 맞추면 <b>공정이 한 번에 2단계</b> 뛰어넘어 완성됩니다!</span>
+  </footer>
+
+  <script>
+    /* ==========================================================================
+       사운드 엔진 (Web Audio API)
+       ========================================================================== */
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) this.ctx = new AudioContext();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      // 틱(메트로놈) 사운드
+      playTick() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, now);
+        gain.gain.setValueAtTime(0.015, now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.03);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.03);
+      }
+
+      // 조립 성공 (Good) 깡!
+      playGood() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(420, now);
+        osc.frequency.exponentialRampToValueAtTime(640, now + 0.12);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.15);
+      }
+
+      // 대성공 (Perfect) 시원하고 경쾌한 앤빌 타격 & 축하 화음!
+      playPerfect() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        // 밝은 3화음 아르페지오 (C6 -> E6 -> G6)
+        const notes = [1046.5, 1318.5, 1567.98];
+        notes.forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.04);
+          gain.gain.setValueAtTime(0.18, now + idx * 0.04);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.04 + 0.2);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now + idx * 0.04);
+          osc.stop(now + idx * 0.04 + 0.2);
+        });
+      }
+
+      // 사운드 엔진 확장
+      playMiss() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(140, now);
+        osc.frequency.linearRampToValueAtTime(50, now + 0.22);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.25);
+      }
+
+      // 고장난 차 삐걱삐걱/푸쉬쉬 출고음
+      playBrokenCar() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        // 푸쉬쉬 노이즈 느낌
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(90, now);
+        osc.frequency.setValueAtTime(70, now + 0.1);
+        osc.frequency.setValueAtTime(110, now + 0.2);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.linearRampToValueAtTime(0.001, now + 0.4);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.4);
+      }
+
+      // 정상/명품 차량 출고 팡파르
+      playComplete() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const notes = [392, 523.25, 659.25, 783.99, 1046.5];
+        notes.forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+          gain.gain.setValueAtTime(0.18, now + idx * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.25);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now + idx * 0.08);
+          osc.stop(now + idx * 0.08 + 0.25);
+        });
+      }
+    }
+
+    const sound = new SoundEngine();
+
+    /* ==========================================================================
+       차량 모델 프리셋 데이터 (동글동글 캐주얼 카툰 스타일)
+       ========================================================================== */
+    const CAR_MODELS = [
+      {
+        tierName: 'STAGE 1',
+        name: '옐로우 팝 세단',
+        icon: 'fa-car-side',
+        bodyColor: '#fbbf24', // Amber 400
+        accentColor: '#f97316', // Orange
+        roofColor: '#fef08a',
+        wheelColor: '#1e293b',
+        wheelRim: '#facc15',
+        parts: [
+          '1. 강철 샤시 뼈대 안착',
+          '2. 터보 V4 엔진 블록 장착',
+          '3. 오렌지 스포츠 휠 조립',
+          '4. 옐로우 팝 카본 바디 결합',
+          '5. LED 헤드라이트 & 틴팅 윈도우 완성'
+        ]
+      },
+      {
+        tierName: 'STAGE 2',
+        name: '민트 몬스터 트럭',
+        icon: 'fa-truck-monster',
+        bodyColor: '#34d399', // Emerald 400
+        accentColor: '#059669',
+        roofColor: '#a7f3d0',
+        wheelColor: '#0f172a',
+        wheelRim: '#10b981',
+        parts: [
+          '1. 강화 오프로드 서스펜션 프레임',
+          '2. 헤비 트윈터보 디젤 엔진',
+          '3. 44인치 빅 몬스터 타이어 4EA',
+          '4. 민트 오프로드 와이드 롤케이지 바디',
+          '5. 루프 서치라이트 & 크롬 배기구 완성'
+        ]
+      },
+      {
+        tierName: 'STAGE 3',
+        name: '사이버 네온 하이퍼카',
+        icon: 'fa-bolt',
+        bodyColor: '#ec4899', // Pink 500
+        accentColor: '#8b5cf6', // Violet
+        roofColor: '#38bdf8', // Sky
+        wheelColor: '#18181b',
+        wheelRim: '#ec4899',
+        parts: [
+          '1. 티타늄 에어로 플로어 샤시',
+          '2. 쿼드 전기 모터 코어 유닛',
+          '3. 카본 세라믹 포뮬러 휠',
+          '4. 사이버 에어로 윙 & 핑크 쉘 바디',
+          '5. 플라즈마 네온 램프 & 부스터 완성'
+        ]
+      }
+    ];
+
+    /* ==========================================================================
+       파티클 이펙트 시스템
+       ========================================================================== */
+    class Particle {
+      constructor(x, y, color, isStar = false, isSmoke = false) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.isStar = isStar;
+        this.isSmoke = isSmoke;
+        
+        if (isSmoke) {
+          // 고장 연기 파티클
+          this.vx = (Math.random() - 0.5) * 2 - 1.5;
+          this.vy = -(Math.random() * 2 + 1);
+          this.size = Math.random() * 10 + 6;
+          this.alpha = 0.8;
+          this.vRot = 0.02;
+          this.rotation = 0;
+        } else {
+          const angle = Math.random() * Math.PI * 2;
+          const speed = Math.random() * 6 + 2;
+          this.vx = Math.cos(angle) * speed;
+          this.vy = Math.sin(angle) * speed - 2;
+          this.size = Math.random() * 8 + 4;
+          this.alpha = 1;
+          this.rotation = Math.random() * Math.PI;
+          this.vRot = (Math.random() - 0.5) * 0.2;
+        }
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        if (this.isSmoke) {
+          this.size += 0.25;
+          this.alpha -= 0.018;
+        } else {
+          this.vy += 0.2; // 중력
+          this.alpha -= 0.025;
+        }
+        this.rotation += this.vRot;
+      }
+
+      draw(ctx) {
+        if (this.alpha <= 0) return;
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, this.alpha);
+        ctx.fillStyle = this.color;
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+
+        if (this.isSmoke) {
+          ctx.beginPath();
+          ctx.arc(0, 0, this.size, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (this.isStar) {
+          ctx.beginPath();
+          for (let i = 0; i < 5; i++) {
+            ctx.lineTo(Math.cos((18 + i * 72) * 0.0174) * this.size, -Math.sin((18 + i * 72) * 0.0174) * this.size);
+            ctx.lineTo(Math.cos((54 + i * 72) * 0.0174) * (this.size / 2), -Math.sin((54 + i * 72) * 0.0174) * (this.size / 2));
+          }
+          ctx.closePath();
+          ctx.fill();
+        } else {
+          ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+        }
+        ctx.restore();
+      }
+    }
+
+    /* ==========================================================================
+       메인 게임 엔진
+       ========================================================================== */
+    class RhythmCarFactory {
+      constructor() {
+        this.canvas = document.getElementById('factoryCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.container = document.getElementById('canvasContainer');
+
+        // DOM 참조
+        this.meterCursor = document.getElementById('meterCursor');
+        this.zoneGood = document.getElementById('zoneGood');
+        this.zonePerfect = document.getElementById('zonePerfect');
+        this.meterPauseMask = document.getElementById('meterPauseMask');
+        this.advantageBadge = document.getElementById('advantageBadge');
+        this.defectWarning = document.getElementById('defectWarning');
+        this.defectBadge = document.getElementById('defectBadge');
+
+        this.scoreDisplay = document.getElementById('scoreDisplay');
+        this.comboDisplay = document.getElementById('comboDisplay');
+        this.modelBadgeIcon = document.getElementById('modelBadgeIcon');
+        this.modelTierText = document.getElementById('modelTierText');
+        this.modelNameText = document.getElementById('modelNameText');
+        this.currentPartNameText = document.getElementById('currentPartNameText');
+        this.progressStepText = document.getElementById('progressStepText');
+
+        this.judgementWrapper = document.getElementById('judgementWrapper');
+        this.judgementText = document.getElementById('judgementText');
+        this.bonusScoreText = document.getElementById('bonusScoreText');
+
+        this.shipmentOverlay = document.getElementById('shipmentOverlay');
+        this.shipmentIconBadge = document.getElementById('shipmentIconBadge');
+        this.qcRankBadge = document.getElementById('qcRankBadge');
+        this.shipmentTitle = document.getElementById('shipmentTitle');
+        this.shipmentDesc = document.getElementById('shipmentDesc');
+        this.shipmentBonusDesc = document.getElementById('shipmentBonusDesc');
+        this.nextCarBtn = document.getElementById('nextCarBtn');
+        this.hitActionBtn = document.getElementById('hitActionBtn');
+        this.soundToggleBtn = document.getElementById('soundToggleBtn');
+        this.soundIcon = document.getElementById('soundIcon');
+        this.gameFrame = document.getElementById('gameFrame');
+
+        // 게임 변수
+        this.score = 0;
+        this.combo = 0;
+        this.currentModelIdx = 0;
+        this.step = 0; // 0 ~ 5
+        this.defectCount = 0; // 실패(MISS)로 인한 고장/결함 수치
+        this.isShipping = false;
+
+        // 리듬 타이밍 바 변수
+        this.cursorPos = 0;
+        this.cursorDirection = 1;
+        this.cursorSpeed = 68;
+
+        this.perfectWidth = 14;
+        this.goodWidth = 44;
+
+        // 시각 효과 연출
+        this.particles = [];
+        this.carWiggle = 0;
+        this.carDriveX = 0;
+        this.assemblyBounce = 0;
+        this.brokenSmokeTimer = 0;
+
+        this.initEvents();
+        this.resize();
+        this.updateModelUI();
+        this.updateMeterZones();
+        this.updateDefectUI();
+
+        this.lastTime = performance.now();
+        requestAnimationFrame((t) => this.gameLoop(t));
+      }
+
+      resize() {
+        const rect = this.container.getBoundingClientRect();
+        this.canvas.width = rect.width * window.devicePixelRatio;
+        this.canvas.height = rect.height * window.devicePixelRatio;
+        this.ctx.imageSmoothingEnabled = true;
+      }
+
+      initEvents() {
+        window.addEventListener('resize', () => this.resize());
+
+        window.addEventListener('keydown', (e) => {
+          if (e.code === 'Space' && !e.repeat) {
+            e.preventDefault();
+            this.handleHit();
+          }
+        });
+
+        this.hitActionBtn.addEventListener('click', () => this.handleHit());
+        this.canvas.addEventListener('click', () => this.handleHit());
+
+        this.nextCarBtn.addEventListener('click', () => {
+          this.startNextCar();
+        });
+
+        this.soundToggleBtn.addEventListener('click', () => {
+          sound.enabled = !sound.enabled;
+          this.soundIcon.className = sound.enabled ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark text-rose-500';
+        });
+      }
+
+      updateMeterZones() {
+        const goodLeft = 50 - this.goodWidth / 2;
+        const perfectLeft = 50 - this.perfectWidth / 2;
+
+        this.zoneGood.style.left = `${goodLeft}%`;
+        this.zoneGood.style.width = `${this.goodWidth}%`;
+
+        this.zonePerfect.style.left = `${perfectLeft}%`;
+        this.zonePerfect.style.width = `${this.perfectWidth}%`;
+      }
+
+      updateDefectUI() {
+        if (this.defectCount === 0) {
+          this.defectBadge.textContent = '정상 (0)';
+          this.defectBadge.className = 'toy-font text-sm sm:text-base font-black text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-xl border border-emerald-300';
+          this.defectWarning.classList.add('hidden');
+        } else if (this.defectCount < 3) {
+          this.defectBadge.textContent = `주의 (${this.defectCount})`;
+          this.defectBadge.className = 'toy-font text-sm sm:text-base font-black text-amber-600 bg-amber-50 px-2.5 py-0.5 rounded-xl border border-amber-300';
+          this.defectWarning.classList.remove('hidden');
+        } else {
+          this.defectBadge.textContent = `고장/불량 (${this.defectCount}) ⚠️`;
+          this.defectBadge.className = 'toy-font text-sm sm:text-base font-black text-rose-600 bg-rose-100 px-2.5 py-0.5 rounded-xl border-2 border-rose-500 animate-pulse';
+          this.defectWarning.classList.remove('hidden');
+        }
+      }
+
+      // 조립 타격 (Hit) 이벤트 처리
+      handleHit() {
+        if (this.isShipping) return;
+
+        sound.init();
+
+        const dist = Math.abs(this.cursorPos - 50);
+
+        if (dist <= this.perfectWidth / 2) {
+          // 대성공 (PERFECT): 공정 +2단계 & 결함 1회 수리!
+          this.onJudgement('PERFECT', 2);
+        } else if (dist <= this.goodWidth / 2) {
+          // 성공 (GOOD): 공정 +1단계
+          this.onJudgement('GOOD', 1);
+        } else {
+          // 실패 (MISS): 공정 실패 + 고장 결함 누적!
+          this.onJudgement('MISS', 0);
+        }
+      }
+
+      onJudgement(type, advanceSteps) {
+        if (type === 'PERFECT') {
+          sound.playPerfect();
+          this.combo++;
+          const addedScore = 500 * (1 + this.combo * 0.1);
+          this.score += Math.round(addedScore);
+
+          let subText = '🔥 대성공! 공정 +2단계 직행!';
+          // 결함이 있는 상태에서 대성공 시 1회 무료 AS 수리 어드밴티지!
+          if (this.defectCount > 0) {
+            this.defectCount--;
+            subText = '🔧 완벽한 튜닝! 결함 1회 자동 수리!';
+          }
+
+          this.showJudgement('PERFECT!', '#f59e0b', subText);
+          this.createExplosion(true);
+          this.assemblyBounce = 24;
+
+          this.advanceStep(advanceSteps);
+
+        } else if (type === 'GOOD') {
+          sound.playGood();
+          this.combo++;
+          const addedScore = 200 * (1 + this.combo * 0.05);
+          this.score += Math.round(addedScore);
+
+          this.showJudgement('GOOD!', '#10b981', '조립 성공! (+1단계)');
+          this.createExplosion(false);
+          this.assemblyBounce = 14;
+
+          this.advanceStep(advanceSteps);
+
+        } else {
+          // MISS: 결함 증가 및 차체 파손 연출
+          sound.playMiss();
+          this.combo = 0;
+          this.defectCount++;
+          
+          this.showJudgement('MISS!', '#ef4444', `💥 조립 삑사리! 부품 결함 +1 (누적: ${this.defectCount})`);
+          this.carWiggle = 22; // 강한 흔들림
+          
+          // 검은 연기/파편 튐
+          const w = this.canvas.width / window.devicePixelRatio;
+          const h = this.canvas.height / window.devicePixelRatio;
+          for (let i = 0; i < 8; i++) {
+            this.particles.push(new Particle(w / 2 + (Math.random() - 0.5) * 40, h * 0.65, '#475569', false, true));
+          }
+        }
+
+        this.updateDefectUI();
+
+        // 스코어 & 콤보 갱신
+        this.scoreDisplay.textContent = this.score.toLocaleString();
+        this.comboDisplay.textContent = this.combo;
+
+        if (this.combo >= 3) {
+          this.advantageBadge.classList.remove('hidden');
+          this.gameFrame.classList.add('fever-active');
+        } else {
+          this.advantageBadge.classList.add('hidden');
+          this.gameFrame.classList.remove('fever-active');
+        }
+      }
+
+      advanceStep(stepIncrement) {
+        this.step += stepIncrement;
+        if (this.step > 5) this.step = 5;
+
+        this.updateStepUI();
+
+        if (this.step >= 5) {
+          this.triggerCarCompletion();
+        }
+      }
+
+      updateStepUI() {
+        const model = CAR_MODELS[this.currentModelIdx];
+        this.progressStepText.textContent = `${this.step} / 5`;
+
+        for (let i = 0; i < 5; i++) {
+          const block = document.getElementById(`step-${i}`);
+          if (i < this.step) {
+            block.className = 'rounded-lg border-2 border-slate-800 bg-amber-400 shadow-sm scale-105 transition-all duration-300';
+          } else {
+            block.className = 'rounded-lg border-2 border-slate-800 bg-slate-200 transition-all duration-300';
+          }
+        }
+
+        if (this.step < 5) {
+          this.currentPartNameText.textContent = model.parts[this.step];
+        } else {
+          this.currentPartNameText.textContent = '🎉 모든 조립 완료! 검수 및 출고!';
+        }
+      }
+
+      // 차량 완성 및 출고 (상태별 검수 판정)
+      triggerCarCompletion() {
+        this.isShipping = true;
+
+        this.meterPauseMask.classList.remove('hidden');
+        this.meterPauseMask.classList.add('flex');
+
+        const model = CAR_MODELS[this.currentModelIdx];
+
+        // 3단계 품질 등급 결정
+        if (this.defectCount === 0) {
+          // [S급] 무결점 명품카
+          sound.playComplete();
+          this.shipmentIconBadge.className = 'w-16 h-16 rounded-full bg-amber-400 text-slate-900 flex items-center justify-center text-3xl font-black mb-2 animate-bounce border-4 border-white';
+          this.shipmentIconBadge.innerHTML = '<i class="fa-solid fa-crown"></i>';
+          this.qcRankBadge.textContent = 'QC 등급: ★★★★★ S급 무결점 슈퍼카';
+          this.qcRankBadge.className = 'px-3 py-1 rounded-full text-xs font-black toy-font mb-1 tracking-wider bg-amber-400 text-slate-900 border border-white';
+          this.shipmentTitle.textContent = '완벽한 명품 차량 출고!';
+          this.shipmentDesc.textContent = `결함 0건! 완벽하게 제작된 [${model.name}]가 최고가로 출고됩니다!`;
+          this.shipmentBonusDesc.textContent = '🏆 무결점 보너스: +2,000 SCORE 획득!';
+          this.score += 2000;
+          this.scoreDisplay.textContent = this.score.toLocaleString();
+
+          for (let i = 0; i < 50; i++) {
+            const w = this.canvas.width / window.devicePixelRatio;
+            const h = this.canvas.height / window.devicePixelRatio;
+            this.particles.push(new Particle(w / 2 + (Math.random() - 0.5) * 150, h / 2, ['#f59e0b', '#ec4899', '#38bdf8', '#10b981'][i % 4], true));
+          }
+
+        } else if (this.defectCount < 3) {
+          // [B급] 일반 양호
+          sound.playComplete();
+          this.shipmentIconBadge.className = 'w-16 h-16 rounded-full bg-emerald-400 text-slate-900 flex items-center justify-center text-3xl font-black mb-2 animate-bounce border-4 border-white';
+          this.shipmentIconBadge.innerHTML = '<i class="fa-solid fa-check"></i>';
+          this.qcRankBadge.textContent = `QC 등급: ★★★ B급 양호 차량 (결함 ${this.defectCount}건)`;
+          this.qcRankBadge.className = 'px-3 py-1 rounded-full text-xs font-black toy-font mb-1 tracking-wider bg-emerald-400 text-slate-900 border border-white';
+          this.shipmentTitle.textContent = '차량 출고 완료!';
+          this.shipmentDesc.textContent = `약간의 잔스크래치가 있지만 무사히 [${model.name}] 출고를 마쳤습니다!`;
+          this.shipmentBonusDesc.textContent = '📦 기본 출고 완료: +800 SCORE';
+          this.score += 800;
+          this.scoreDisplay.textContent = this.score.toLocaleString();
+
+        } else {
+          // [F급] 고장난 똥차/레몬카 출고!
+          sound.playBrokenCar();
+          this.shipmentIconBadge.className = 'w-16 h-16 rounded-full bg-rose-500 text-white flex items-center justify-center text-3xl font-black mb-2 animate-pulse border-4 border-white';
+          this.shipmentIconBadge.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+          this.qcRankBadge.textContent = `QC 등급: ⚠️ F급 불량 고장차 (결함 ${this.defectCount}건)`;
+          this.qcRankBadge.className = 'px-3 py-1 rounded-full text-xs font-black toy-font mb-1 tracking-wider bg-rose-500 text-white border border-white';
+          this.shipmentTitle.textContent = '덜컹덜컹... 고장 상태로 출고!';
+          this.shipmentDesc.textContent = `심각한 불량 누적으로 삐걱거리는 고장난 [${model.name}]가 떨이로 처분되었습니다! ㅠㅠ`;
+          this.shipmentBonusDesc.textContent = '💸 감가상각 페널티: 최저 처분가 +100 SCORE';
+          this.score += 100;
+          this.scoreDisplay.textContent = this.score.toLocaleString();
+        }
+
+        setTimeout(() => {
+          this.shipmentOverlay.classList.remove('opacity-0', 'pointer-events-none');
+          this.shipmentOverlay.classList.add('opacity-100');
+        }, 900);
+      }
+
+      startNextCar() {
+        this.shipmentOverlay.classList.remove('opacity-100');
+        this.shipmentOverlay.classList.add('opacity-0', 'pointer-events-none');
+
+        this.currentModelIdx = (this.currentModelIdx + 1) % CAR_MODELS.length;
+        this.step = 0;
+        this.defectCount = 0; // 결함 초기화
+        this.carDriveX = 0;
+        this.assemblyBounce = 0;
+        this.carWiggle = 0;
+
+        this.cursorSpeed = Math.min(105, 68 + this.currentModelIdx * 10);
+
+        this.updateModelUI();
+        this.updateStepUI();
+        this.updateDefectUI();
+
+        this.meterPauseMask.classList.remove('flex');
+        this.meterPauseMask.classList.add('hidden');
+        this.isShipping = false;
+      }
+
+      updateModelUI() {
+        const model = CAR_MODELS[this.currentModelIdx];
+        this.modelBadgeIcon.innerHTML = `<i class="fa-solid ${model.icon}"></i>`;
+        this.modelTierText.textContent = model.tierName;
+        this.modelNameText.textContent = model.name;
+        this.updateStepUI();
+      }
+
+      showJudgement(text, color, subText) {
+        this.judgementText.textContent = text;
+        this.judgementText.style.color = color;
+        this.bonusScoreText.textContent = subText;
+
+        this.judgementWrapper.classList.remove('opacity-0', 'scale-50');
+        this.judgementWrapper.classList.add('opacity-100', 'scale-100');
+
+        clearTimeout(this.judgeTimeout);
+        this.judgeTimeout = setTimeout(() => {
+          this.judgementWrapper.classList.remove('opacity-100', 'scale-100');
+          this.judgementWrapper.classList.add('opacity-0', 'scale-50');
+        }, 700);
+      }
+
+      createExplosion(isPerfect) {
+        const w = this.canvas.width / window.devicePixelRatio;
+        const h = this.canvas.height / window.devicePixelRatio;
+        const count = isPerfect ? 24 : 12;
+        const colors = isPerfect ? ['#fbbf24', '#f59e0b', '#ffffff', '#ec4899'] : ['#10b981', '#34d399', '#ffffff'];
+
+        for (let i = 0; i < count; i++) {
+          this.particles.push(new Particle(w / 2, h / 2 + 10, colors[i % colors.length], isPerfect));
+        }
+      }
+
+      gameLoop(currentTime) {
+        const dt = Math.min((currentTime - this.lastTime) / 1000, 0.1);
+        this.lastTime = currentTime;
+
+        if (!this.isShipping) {
+          this.cursorPos += this.cursorDirection * this.cursorSpeed * dt;
+
+          if (this.cursorPos >= 100) {
+            this.cursorPos = 100;
+            this.cursorDirection = -1;
+            sound.playTick();
+          } else if (this.cursorPos <= 0) {
+            this.cursorPos = 0;
+            this.cursorDirection = 1;
+            sound.playTick();
+          }
+
+          this.meterCursor.style.left = `${this.cursorPos}%`;
+        }
+
+        // 출고 시 주행 연출 (고장차는 느리고 덜컹거림!)
+        if (this.isShipping) {
+          if (this.defectCount >= 3) {
+            // 고장차: 느리고 삐걱대며 기어감
+            this.carDriveX += 160 * dt;
+            this.carWiggle = 6;
+          } else {
+            // 정상/명품차: 시원하게 질주
+            this.carDriveX += 460 * dt;
+          }
+        }
+
+        // 고장 결함 누적 시 먹구름 연기 뿜기
+        if (this.defectCount > 0 && this.step > 0) {
+          this.brokenSmokeTimer += dt;
+          const smokeInterval = this.defectCount >= 3 ? 0.08 : 0.22;
+          if (this.brokenSmokeTimer >= smokeInterval) {
+            this.brokenSmokeTimer = 0;
+            const dpr = window.devicePixelRatio;
+            const w = this.canvas.width / dpr;
+            const h = this.canvas.height / dpr;
+            const liftY = h * 0.72;
+            const carX = (w / 2) + this.carDriveX - 70;
+            const carY = liftY - 35;
+            this.particles.push(new Particle(carX, carY, this.defectCount >= 3 ? '#1e293b' : '#64748b', false, true));
+          }
+        }
+
+        // 진동 감쇠
+        if (this.carWiggle > 0 && !this.isShipping) this.carWiggle -= 35 * dt;
+        if (this.carWiggle < 0) this.carWiggle = 0;
+
+        if (this.assemblyBounce > 0) this.assemblyBounce -= 50 * dt;
+        if (this.assemblyBounce < 0) this.assemblyBounce = 0;
+
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+          this.particles[i].update();
+          if (this.particles[i].alpha <= 0) {
+            this.particles.splice(i, 1);
+          }
+        }
+
+        this.render();
+
+        requestAnimationFrame((t) => this.gameLoop(t));
+      }
+
+      render() {
+        const ctx = this.ctx;
+        const dpr = window.devicePixelRatio;
+        const width = this.canvas.width / dpr;
+        const height = this.canvas.height / dpr;
+
+        ctx.save();
+        ctx.scale(dpr, dpr);
+        ctx.clearRect(0, 0, width, height);
+
+        // 1. 공장 배경
+        this.drawFactoryBackground(ctx, width, height);
+
+        // 2. 리프트
+        const liftY = height * 0.72;
+        this.drawLiftPlatform(ctx, width / 2, liftY);
+
+        // 3. 자동차 드로잉 (고장 상태 덜컹거림 포함)
+        const wiggleX = (Math.random() - 0.5) * this.carWiggle;
+        const wiggleY = (this.defectCount >= 3 && this.isShipping) ? (Math.random() - 0.5) * 8 : 0;
+        const bounceY = -this.assemblyBounce + wiggleY;
+        const carCenterX = (width / 2) + this.carDriveX + wiggleX;
+        const carCenterY = liftY - 10 + bounceY;
+
+        this.drawAssembledCar(ctx, carCenterX, carCenterY);
+
+        // 4. 파티클
+        this.particles.forEach(p => p.draw(ctx));
+
+        ctx.restore();
+      }
+
+      drawFactoryBackground(ctx, w, h) {
+        ctx.fillStyle = '#bae6fd';
+        ctx.fillRect(0, 0, w, h);
+
+        const floorY = h * 0.74;
+        ctx.fillStyle = '#f1f5f9';
+        ctx.fillRect(0, floorY, w, h - floorY);
+
+        ctx.fillStyle = '#facc15';
+        ctx.fillRect(0, floorY - 8, w, 8);
+        ctx.fillStyle = '#1e293b';
+        for (let x = 0; x < w; x += 24) {
+          ctx.beginPath();
+          ctx.moveTo(x, floorY - 8);
+          ctx.lineTo(x + 12, floorY - 8);
+          ctx.lineTo(x + 4, floorY);
+          ctx.lineTo(x - 8, floorY);
+          ctx.fill();
+        }
+
+        ctx.save();
+        ctx.fillStyle = '#7dd3fc';
+        this.drawCuteGear(ctx, 60, 50, 28, 8);
+        this.drawCuteGear(ctx, 110, 75, 20, 6);
+        this.drawCuteGear(ctx, w - 80, 55, 32, 10);
+        ctx.restore();
+      }
+
+      drawCuteGear(ctx, cx, cy, r, teeth) {
+        ctx.beginPath();
+        for (let i = 0; i < teeth; i++) {
+          const a = (i / teeth) * Math.PI * 2;
+          const aNext = ((i + 0.5) / teeth) * Math.PI * 2;
+          ctx.arc(cx, cy, r + 5, a, a + 0.2);
+          ctx.arc(cx, cy, r, a + 0.2, aNext);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(cx, cy, r * 0.4, 0, Math.PI * 2);
+        ctx.fillStyle = '#bae6fd';
+        ctx.fill();
+      }
+
+      drawLiftPlatform(ctx, cx, cy) {
+        ctx.save();
+        ctx.fillStyle = '#64748b';
+        ctx.fillRect(cx - 110, cy, 18, 50);
+        ctx.fillRect(cx + 92, cy, 18, 50);
+
+        ctx.fillStyle = '#fbbf24';
+        ctx.strokeStyle = '#1e293b';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.roundRect(cx - 140, cy - 8, 280, 16, 8);
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // 단계별 자동차 + ★ 결함(고장) 디테일 렌더링 ★
+      drawAssembledCar(ctx, cx, cy) {
+        if (this.step <= 0) {
+          ctx.save();
+          ctx.fillStyle = 'rgba(100, 116, 139, 0.25)';
+          ctx.strokeStyle = 'rgba(100, 116, 139, 0.4)';
+          ctx.lineWidth = 3;
+          ctx.setLineDash([6, 6]);
+          ctx.beginPath();
+          ctx.roundRect(cx - 105, cy - 45, 210, 48, 16);
+          ctx.fill();
+          ctx.stroke();
+          ctx.restore();
+          return;
+        }
+
+        const model = CAR_MODELS[this.currentModelIdx];
+        const isBroken = this.defectCount >= 3;
+        const hasScratch = this.defectCount > 0;
+
+        ctx.save();
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = '#1e293b';
+
+        // [1단계]: 섀시 및 축 (고장 시 삐뚤어짐)
+        if (this.step >= 1) {
+          ctx.save();
+          if (isBroken) {
+            ctx.translate(cx, cy);
+            ctx.rotate(0.04); // 살짝 뒤틀린 프레임
+            ctx.translate(-cx, -cy);
+          }
+          ctx.fillStyle = isBroken ? '#334155' : '#475569';
+          ctx.beginPath();
+          ctx.roundRect(cx - 100, cy - 14, 200, 18, 6);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = '#1e293b';
+          ctx.fillRect(cx - 75, cy - 4, 30, 8);
+          ctx.fillRect(cx + 45, cy - 4, 30, 8);
+          ctx.restore();
+        }
+
+        // [2단계]: 엔진 블록 (고장 시 불꽃/찌그러짐)
+        if (this.step >= 2) {
+          ctx.fillStyle = isBroken ? '#78350f' : '#ef4444';
+          ctx.beginPath();
+          ctx.roundRect(cx + 25, cy - 34, 48, 22, 6);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.fillStyle = '#cbd5e1';
+          ctx.fillRect(cx + 32, cy - 40, 10, 8);
+          ctx.fillRect(cx + 48, cy - 40, 10, 8);
+
+          ctx.fillStyle = '#94a3b8';
+          ctx.fillRect(cx - 105, cy - 6, 14, 8);
+        }
+
+        // [3단계]: 휠 & 타이어 (고장 시 바퀴가 비스듬하게 덜렁거림)
+        if (this.step >= 3) {
+          const drawWheel = (wx, wy, radius, tilted = false) => {
+            ctx.save();
+            if (tilted) {
+              ctx.translate(wx, wy);
+              ctx.rotate(0.28); // 덜렁거리는 휠 각도
+              ctx.translate(-wx, -wy);
+            }
+            ctx.fillStyle = model.wheelColor;
+            ctx.beginPath();
+            ctx.arc(wx, wy, radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = isBroken ? '#94a3b8' : model.wheelRim;
+            ctx.beginPath();
+            ctx.arc(wx, wy, radius * 0.52, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(wx, wy, radius * 0.22, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+          };
+
+          drawWheel(cx - 60, cy + 2, 21, isBroken); // 뒷바퀴 삐딱
+          drawWheel(cx + 60, cy + 2, 21, false);
+        }
+
+        // [4단계]: 차체 바디 (고장 시 찌그러진 페인트 & 반창고)
+        if (this.step >= 4) {
+          ctx.fillStyle = isBroken ? '#94a3b8' : model.bodyColor; // 고장차는 칙칙한 색상
+          ctx.beginPath();
+          ctx.roundRect(cx - 95, cy - 40, 190, 32, 12);
+          ctx.fill();
+          ctx.stroke();
+
+          // 루프 쉘
+          ctx.fillStyle = isBroken ? '#cbd5e1' : model.roofColor;
+          ctx.beginPath();
+          ctx.moveTo(cx - 55, cy - 38);
+          ctx.lineTo(cx - 35, cy - 66);
+          ctx.quadraticCurveTo(cx, cy - 70, cx + 35, cy - 66);
+          ctx.lineTo(cx + 55, cy - 38);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          // 도어
+          ctx.strokeStyle = '#1e293b';
+          ctx.beginPath();
+          ctx.moveTo(cx - 2, cy - 38);
+          ctx.lineTo(cx - 2, cy - 12);
+          ctx.stroke();
+
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(cx - 22, cy - 28, 12, 4);
+          ctx.fillRect(cx + 10, cy - 28, 12, 4);
+
+          // ★ 결함/고장 디테일: 차체 반창고 & 찌그러진 금
+          if (hasScratch) {
+            // X자 반창고(Band-aid) 연출
+            ctx.save();
+            ctx.strokeStyle = '#fcd34d';
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            ctx.moveTo(cx - 45, cy - 32);
+            ctx.lineTo(cx - 25, cy - 18);
+            ctx.moveTo(cx - 25, cy - 32);
+            ctx.lineTo(cx - 45, cy - 18);
+            ctx.stroke();
+            ctx.restore();
+          }
+
+          if (isBroken) {
+            // 심각한 찌그러짐 균열 선
+            ctx.strokeStyle = '#0f172a';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(cx + 20, cy - 36);
+            ctx.lineTo(cx + 35, cy - 22);
+            ctx.lineTo(cx + 25, cy - 14);
+            ctx.stroke();
+          }
+        }
+
+        // [5단계 (완성)]: 헤드라이트 & 윈도우
+        if (this.step >= 5) {
+          // 전면/후면 윈도우 (고장차는 깨진 금)
+          ctx.fillStyle = isBroken ? '#64748b' : '#38bdf8';
+          ctx.beginPath();
+          ctx.moveTo(cx - 45, cy - 40);
+          ctx.lineTo(cx - 30, cy - 62);
+          ctx.lineTo(cx - 6, cy - 62);
+          ctx.lineTo(cx - 6, cy - 40);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(cx + 45, cy - 40);
+          ctx.lineTo(cx + 30, cy - 62);
+          ctx.lineTo(cx + 6, cy - 62);
+          ctx.lineTo(cx + 6, cy - 40);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          // 유리창 깨진 크랙 금 표시 (고장 시)
+          if (isBroken) {
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(cx + 22, cy - 54);
+            ctx.lineTo(cx + 32, cy - 48);
+            ctx.lineTo(cx + 26, cy - 42);
+            ctx.stroke();
+          }
+
+          // 헤드라이트 (고장 시 깜빡이거나 꺼짐)
+          ctx.fillStyle = isBroken ? '#78716c' : '#fef08a';
+          ctx.beginPath();
+          ctx.arc(cx + 92, cy - 26, 7, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // 후면 램프
+          ctx.fillStyle = '#ef4444';
+          ctx.beginPath();
+          ctx.arc(cx - 92, cy - 26, 6, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // 출고 질주 시 백파이어 (정상: 불꽃, 고장차: 검은 연기 폭발)
+          if (this.isShipping) {
+            if (isBroken) {
+              ctx.fillStyle = '#334155';
+              ctx.beginPath();
+              ctx.arc(cx - 115, cy - 6, 12 + Math.random() * 6, 0, Math.PI * 2);
+              ctx.fill();
+            } else {
+              ctx.fillStyle = '#f97316';
+              ctx.beginPath();
+              ctx.moveTo(cx - 105, cy - 6);
+              ctx.lineTo(cx - 128 - Math.random() * 15, cy - 3);
+              ctx.lineTo(cx - 105, cy);
+              ctx.closePath();
+              ctx.fill();
+            }
+          }
+        }
+
+        ctx.restore();
+      }
+    }
+
+    window.onload = () => {
+      new RhythmCarFactory();
+    };
+  </script>
+</body>
+</html>
